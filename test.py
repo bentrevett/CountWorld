@@ -1,5 +1,7 @@
 import CountWorld
 
-world = CountWorld.World(3, 3, 3)
+world = CountWorld.World(n_entities=2, n_objects=2, n_locations=2, story_length=15, n_questions=5)
 
-world.generate_example(10)
+examples = world.generate_examples(2)
+
+print(examples)

@@ -1,30 +1,50 @@
 import random
 from collections import defaultdict
 
-ENTITY_NAMES = ['entityA', 'entityB', 'entityC']
-OBJECT_NAMES = ['objectA', 'objectB', 'objectC']
-LOCATION_NAMES = ['locationA', 'locationB', 'locationC']
+random.seed(1234)
+
+ENTITY_NAMES = ['ruben', 'jane', 'eric', 'eve', 'adam']
+OBJECT_NAMES = ['apples', 'leaves', 'rocks', 'flowers', 'bugs']
+LOCATION_NAMES = ['park', 'forest', 'mountains', 'town', 'station']
 
 class World:
 
-    def __init__(self, n_entities, n_objects, n_locations):
+    def __init__(self, n_entities, n_objects, n_locations, story_length, n_questions):
 
         assert n_entities <= len(ENTITY_NAMES)
         assert n_objects <= len(OBJECT_NAMES)
         assert n_locations <= len(LOCATION_NAMES)
 
+        random.shuffle(ENTITY_NAMES)
+        random.shuffle(OBJECT_NAMES)
+        random.shuffle(LOCATION_NAMES)
+
         self.entities = [Entity(ENTITY_NAMES[i]) for i in range(n_entities)]
         self.objects = [Object(OBJECT_NAMES[i]) for i in range(n_objects)]
         self.locations = [Location(LOCATION_NAMES[i]) for i in range(n_locations)]
 
-    def generate_examples(self, n=100):
-        pass
+        self.story_length = story_length
+        self.n_questions = n_questions
 
-    def generate_example(self, example_length):
+    def generate_examples(self, n):
+        
+        examples = dict()
 
-        example = []
+        for i in range(n):
+            s, q = self.generate_example(self.story_length, self.n_questions)
+            random.shuffle(q)
+            examples[i] = {'story': s, 'questions': q[:self.n_questions]}
 
-        while len(example) < example_length:
+        return examples
+
+    def generate_example(self, story_length, n_questions):
+
+        story = []
+        questions = []
+
+        #generate story
+
+        while len(story) < story_length:
             
             #select entity at random
             actor = random.choice(self.entities)
@@ -35,7 +55,7 @@ class World:
                 for l in self.locations:
                     if l.name == actor.position:
                         l.entity_visits[actor.name] += 1
-                example.append(f'{actor.name} went to the {actor.position}')
+                story.append(f'{actor.name} went to the {actor.position}')
                 continue
 
             #options are:
@@ -60,8 +80,8 @@ class World:
                     if l.name == new_location:
                         l.entity_visits[actor.name] += 1
 
-                #update example
-                example.append(f'{actor.name} went to the {new_location}')
+                #update story
+                story.append(f'{actor.name} went to the {new_location}')
 
             elif action == 'pick':
                 #select which object to pick up
@@ -85,8 +105,8 @@ class World:
                     if l.name == actor.position:
                         l.picked_objects[picked_object].append(n_picked)
 
-                #update example
-                example.append(f'{actor.name} picked up {n_picked} {picked_object}')
+                #update story
+                story.append(f'{actor.name} picked up {n_picked} {picked_object}')
                 
             else:
                 #can only drop items if carrying any
@@ -120,10 +140,148 @@ class World:
                 #make sure it hasn't gone negative
                 assert actor.inventory[dropped_object] >= 0
 
-                #update example
-                example.append(f'{actor.name} dropped {n_dropped} {dropped_object}')
+                #update story
+                story.append(f'{actor.name} dropped {n_dropped} {dropped_object}')
 
-        print(example)
+        #generate questions and answers
+
+        #how many <object> is <entity> carrying?
+        for ent in self.entities:
+            for obj in self.objects:
+                question = f'How many {obj.name} is {ent.name} carrying ?'
+                answer = ent.inventory[obj.name]
+                questions.append((question, answer))
+
+        #how many entities picked up <object>?
+        for obj in self.objects:
+            question = f'How many entities picked up {obj.name} ?'
+            answer = len([x for x in obj.picked_entity.values() if len(x) > 0])
+            questions.append((question, answer))
+
+        #how many times were <object> picked up in total?
+        for obj in self.objects:
+            question = f'How many times were {obj.name} picked up in total ?'
+            answer = len(obj.n_picked)
+            questions.append((question, answer))
+
+        #how many <object> were picked up in total?
+        for obj in self.objects:
+            question = f'How many {obj.name} were picked up in total ?'
+            answer = sum(obj.n_picked)
+            questions.append((question, answer))
+
+        #how many entities dropped <object>?
+        for obj in self.objects:
+            question = f'How many entities dropped {obj.name} ?'
+            answer = len([x for x in obj.dropped_entity.values() if len(x) > 0])
+            questions.append((question, answer))
+
+        #how many times were <object> dropped in total?
+        for obj in self.objects:
+            question = f'How many times were {obj.name} dropped in total ?'
+            answer = len(obj.n_dropped)
+            questions.append((question, answer))
+
+        #how many <object> were dropped in total?
+        for obj in self.objects:
+            question = f'How many {obj.name} were dropped in total ?'
+            answer = sum(obj.n_dropped)
+            questions.append((question, answer))
+
+        #how many different <objects> were picked up from <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'how many different {obj.name} were picked up from {loc.name} ?'
+                answer = len([x for x in obj.picked_location.values() if len(x) > 0])
+                questions.append((question, answer))
+
+        #how many times were <object> picked up from <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'How many times were {obj.name} picked up from {loc.name} ?'
+                answer = len(obj.picked_location[loc.name])
+                questions.append((question, answer))
+
+        #how many <object> were picked up from <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'How many {obj.name} were picked up from {loc.name} ?'
+                answer = sum(obj.picked_location[loc.name])
+                questions.append((question, answer))
+
+        #how many times did <entity> pick up <object>?
+        for obj in self.objects:
+            for ent in self.entities:
+                question = f'How many times did {ent.name} pick up {obj.name} ?'
+                answer = len(obj.picked_entity[ent.name])
+                questions.append((question, answer))
+
+        #how many <object> did <entity> pick up?
+        for obj in self.objects:
+            for ent in self.entities:
+                question = f'How many {obj.name} did {ent.name} pick up ?'
+                answer = sum(obj.picked_entity[ent.name])
+                questions.append((question, answer))
+
+        #how many different <objects> were dropped at <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'how many different {obj.name} were dropped at {loc.name} ?'
+                answer = len([x for x in obj.dropped_location.values() if len(x) > 0])
+                questions.append((question, answer))
+
+        #how many times were <object> dropped at <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'How many times were {obj.name} dropped at {loc.name} ?'
+                answer = len(obj.dropped_location[loc.name])
+                questions.append((question, answer))
+
+        #how many <object> were dropped at <location>?
+        for obj in self.objects:
+            for loc in self.locations:
+                question = f'How many {obj.name} were dropped at {loc.name} ?'
+                answer = sum(obj.dropped_location[loc.name])
+                questions.append((question, answer))
+
+        #how many times did <entity> drop <object>?
+        for obj in self.objects:
+            for ent in self.entities:
+                question = f'How many times did {ent.name} drop {obj.name} ?'
+                answer = len(obj.dropped_entity[ent.name])
+                questions.append((question, answer))
+
+        #how many <object> did <entity> drop?
+        for obj in self.objects:
+            for ent in self.entities:
+                question = f'How many {obj.name} did {ent.name} drop ?'
+                answer = len(obj.dropped_entity[ent.name])
+                questions.append((question, answer))
+
+        #how many entities visited <location>?
+        for ent in self.entities:
+            for loc in self.locations:
+                question = f'How many entities visited {loc.name} ?'
+                answer = len([x for x in loc.entity_visits.values() if x > 0])
+                questions.append((question, answer))
+
+        #how many times did <entity> visit <location>?
+        for ent in self.entities:
+            for loc in self.locations:
+                question = f'How many times did {ent.name} visit {loc.name} ?'
+                answer = loc.entity_visits[ent.name]
+                questions.append((question, answer))
+
+        #how many times was <location> visited in total?
+        for ent in self.entities:
+            for loc in self.locations:
+                question = f'How many times was {loc.name} visited in total ?'
+                answer = sum([x for x in loc.entity_visits.values()])
+                questions.append((question, answer))
+
+        return story, questions
+        
+
 
 class Entity:
 

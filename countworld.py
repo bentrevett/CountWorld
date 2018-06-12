@@ -7,18 +7,18 @@ LOCATION_NAMES = ['park', 'forest', 'mountains', 'town', 'station', 'bridge', 'r
 
 class World:
 
-    def __init__(self, n_entities, n_objects, n_locations, story_length, n_questions, seed=None):
+    def __init__(self, n_entities, n_objects, n_locations, story_length, n_questions, random_seed=None):
         """
         n_entities (int): number of unique entities in the story
         n_objects (int): number of unique objects in the story
         n_locations (int): number of unique locations in the story
         story_length (int): number of statements that make up story
         n_questions (int): number of questions asked at the end of the story
-        seed (int): random seed for reproducibility, leave None for random random seed
+        random_seed (int): random seed for reproducibility, leave None for random random seed
         """
 
-        if seed is not None:
-            random.seed(seed)
+        if random_seed is not None:
+            random.seed(random_seed)
 
         assert n_entities <= len(ENTITY_NAMES)
         assert n_objects <= len(OBJECT_NAMES)
@@ -124,8 +124,9 @@ class World:
                 story.append(f'{actor.name} picked up {n_picked} {picked_object}')
                 
             else:
+
                 #can only have picked drop if actor is carrying any items
-                assert sum(actor.inventory.values()) > 1
+                assert sum(actor.inventory.values()) > 0
 
                 #select which objects to drop
                 available_objects = [obj for obj in actor.inventory.keys() if actor.inventory[obj] > 0]

@@ -46,6 +46,12 @@ class World:
 
         return examples
 
+    def generate_story(self):
+        pass
+
+    def generate_questions(self):
+        pass
+
     def generate_example(self, story_length, n_questions):
 
         story = []

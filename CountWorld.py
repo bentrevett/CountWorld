@@ -28,12 +28,12 @@ class World:
 
     def generate_examples(self, n):
         
-        examples = dict()
+        examples = []
 
-        for i in range(n):
+        for _ in range(n):
             s, q = self.generate_example(self.story_length, self.n_questions)
             random.shuffle(q)
-            examples[i] = {'story': s, 'questions': q[:self.n_questions]}
+            examples.append({'story': s, 'questions': q[:self.n_questions]})
 
         return examples
 
@@ -188,12 +188,11 @@ class World:
             answer = sum(obj.n_dropped)
             questions.append((question, answer))
 
-        #how many different <objects> were picked up from <location>?
-        for obj in self.objects:
-            for loc in self.locations:
-                question = f'how many different {obj.name} were picked up from {loc.name} ?'
-                answer = len([x for x in obj.picked_location.values() if len(x) > 0])
-                questions.append((question, answer))
+        #how many different objects were picked up from <location>?
+        for loc in self.locations:
+            question = f'how many different objects were picked up from {loc.name} ?'
+            answer = len([x for x in obj.picked_location.values() if len(x) > 0])
+            questions.append((question, answer))
 
         #how many times were <object> picked up from <location>?
         for obj in self.objects:
@@ -223,12 +222,11 @@ class World:
                 answer = sum(obj.picked_entity[ent.name])
                 questions.append((question, answer))
 
-        #how many different <objects> were dropped at <location>?
-        for obj in self.objects:
-            for loc in self.locations:
-                question = f'how many different {obj.name} were dropped at {loc.name} ?'
-                answer = len([x for x in obj.dropped_location.values() if len(x) > 0])
-                questions.append((question, answer))
+        #how many different objects were dropped at <location>?
+        for loc in self.locations:
+            question = f'how many different objects were dropped at {loc.name} ?'
+            answer = len([x for x in obj.dropped_location.values() if len(x) > 0])
+            questions.append((question, answer))
 
         #how many times were <object> dropped at <location>?
         for obj in self.objects:
@@ -261,7 +259,7 @@ class World:
         #how many entities visited <location>?
         for ent in self.entities:
             for loc in self.locations:
-                question = f'How many entities visited {loc.name} ?'
+                question = f'How many entities visited the {loc.name} ?'
                 answer = len([x for x in loc.entity_visits.values() if x > 0])
                 questions.append((question, answer))
 

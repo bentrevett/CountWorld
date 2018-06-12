@@ -9,5 +9,3 @@ The environment consists of:
 - `objects`, which the `entities` interact with
 - `locations`, which the `entities` "visit" and perform `actions`
 - `actions`, which the `entities` perform in `locations` which involve `objects`
-
-

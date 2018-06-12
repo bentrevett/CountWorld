@@ -1,6 +1,6 @@
 import countworld
 
-world = countworld.World(n_entities=2, n_objects=2, n_locations=2, story_length=15, n_questions=5)
+world = countworld.World(n_entities=2, n_objects=2, n_locations=2, story_length=15, n_questions=5, seed=1234)
 
 examples = world.generate_examples(1)
 

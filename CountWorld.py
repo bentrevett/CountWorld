@@ -1,15 +1,24 @@
 import random
 from collections import defaultdict
 
-random.seed(1234)
-
-ENTITY_NAMES = ['ruben', 'jane', 'eric', 'eve', 'adam']
-OBJECT_NAMES = ['apples', 'leaves', 'rocks', 'flowers', 'bugs']
-LOCATION_NAMES = ['park', 'forest', 'mountains', 'town', 'station']
+ENTITY_NAMES = ['ruben', 'jane', 'eric', 'eve', 'adam', 'claire', 'liam', 'emma', 'oliver', 'sophie']
+OBJECT_NAMES = ['leaves', 'rocks', 'flowers', 'insects', 'sticks', 'mushrooms', 'eggs', 'feathers', 'shells', 'berries']
+LOCATION_NAMES = ['park', 'forest', 'mountains', 'town', 'station', 'bridge', 'river', 'beach', 'school', 'stadium']
 
 class World:
 
-    def __init__(self, n_entities, n_objects, n_locations, story_length, n_questions):
+    def __init__(self, n_entities, n_objects, n_locations, story_length, n_questions, seed=None):
+        """
+        n_entities (int): number of unique entities in the story
+        n_objects (int): number of unique objects in the story
+        n_locations (int): number of unique locations in the story
+        story_length (int): number of statements that make up story
+        n_questions (int): number of questions asked at the end of the story
+        seed (int): random seed for reproducibility, leave None for random random seed
+        """
+
+        if seed is not None:
+            random.seed(seed)
 
         assert n_entities <= len(ENTITY_NAMES)
         assert n_objects <= len(OBJECT_NAMES)
@@ -27,7 +36,7 @@ class World:
         self.n_questions = n_questions
 
     def generate_examples(self, n):
-        
+
         examples = []
 
         for _ in range(n):

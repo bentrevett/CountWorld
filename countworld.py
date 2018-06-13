@@ -1,5 +1,6 @@
 import random
 from collections import defaultdict
+from tqdm import tqdm
 
 ENTITY_NAMES = ['ruben', 'jane', 'eric', 'eve', 'adam', 'claire', 'liam', 'emma', 'oliver', 'sophie']
 OBJECT_NAMES = ['leaves', 'rocks', 'flowers', 'insects', 'sticks', 'mushrooms', 'eggs', 'feathers', 'shells', 'berries']
@@ -39,7 +40,7 @@ def generate_examples(n_examples,
     examples = []
 
     #generate examples
-    for _ in range(n_examples):
+    for _ in tqdm(range(n_examples)):
 
         #make sure entities/objects/locations are random for each story
         random.shuffle(ENTITY_NAMES)

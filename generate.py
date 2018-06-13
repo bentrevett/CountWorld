@@ -1,42 +1,70 @@
-import argparse
 import json
 import countworld
+import os
+from collections import Counter
 
-parser = argparse.ArgumentParser(description='Generating countworld examples')
-parser.add_argument('--n_examples',type=int,default=10)
-parser.add_argument('--n_entities',type=int,default=2)
-parser.add_argument('--n_objects',type=int,default=2)
-parser.add_argument('--n_locations',type=int,default=2)
-parser.add_argument('--n_questions',type=int,default=5)
-parser.add_argument('--story_length',type=int,default=20)
-parser.add_argument('--multi_answer', action='store_false', default=True)
-parser.add_argument('--random_seed',type=int,
-default=None)
-args = parser.parse_args()
+N_EXAMPLES = 100_000 #examples
+N_ENTITIES = 2 #entities per story
+N_OBJECTS = 2 #objects per story
+N_LOCATIONS = 2 #locations per story
+STORY_LENGTH = 20 #story length
+N_QUESTIONS = 5 #questions per story
+SINGLE_ANSWER = True #single answer
+RANDOM_SEED = 1234 #random seed
 
-examples = countworld.generate_examples(args.n_examples, 
-                                        args.n_entities, 
-                                        args.n_objects, 
-                                        args.n_locations,
-                                        args.story_length,
-                                        args.n_questions,
-                                        args.multi_answer,
-                                        args.random_seed)
+print('Generating examples...')
+
+examples = countworld.generate_examples(N_EXAMPLES, 
+                                        N_ENTITIES, 
+                                        N_OBJECTS, 
+                                        N_LOCATIONS, 
+                                        STORY_LENGTH, 
+                                        N_QUESTIONS, 
+                                        SINGLE_ANSWER, 
+                                        RANDOM_SEED) 
 
 """
 PyTorch expects JSON data to be one JSON object per line
 We also split the story statements and question/answer pair into their own key-value pairs
 """
 
-with open(f'example.json', 'w') as w:
-    for example in examples:
-        temp = dict()
-        story = example['story']
-        for i, s in enumerate(story):
-            temp[f'story_{i}'] = s
-        questions = example['questions']
-        for i, (q, a) in enumerate(questions):
-            temp[f'question_{i}'] = q
-            temp[f'answer_{i}'] = a
-        json.dump(temp, w)
-        w.write('\n')
+train_examples = examples[:80_000]
+val_examples = examples[80_000:90_000]
+test_examples = examples[90_000:]
+
+cnt = Counter()
+
+for example in examples:
+    questions = example['questions']
+    for (q, a) in questions:
+        cnt.update([a])
+
+total_answers = sum(cnt.values())
+
+assert total_answers == N_EXAMPLES*N_QUESTIONS
+
+for k, v in cnt.items():
+    print(f'answer {k}, count {v}, pct:{v/total_answers:.2f}')
+
+del examples
+
+if not os.path.isdir('data'):
+    os.mkdir('data')
+
+def create_datasets(name, examples):
+    with open(f'data/{name}.json', 'w') as w:
+        for example in examples:
+            temp = dict()
+            story = example['story']
+            for i, s in enumerate(story):
+                temp[f'story_{i}'] = s
+            questions = example['questions']
+            for i, (q, a) in enumerate(questions):
+                temp[f'question_{i}'] = q
+                temp[f'answer_{i}'] = a
+            json.dump(temp, w)
+            w.write('\n')
+
+create_datasets('train', train_examples)
+create_datasets('val', val_examples)
+create_datasets('test', test_examples)

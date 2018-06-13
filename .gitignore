@@ -102,4 +102,6 @@ ENV/
 
 #test
 test.py
-example.json
+
+#data
+data/

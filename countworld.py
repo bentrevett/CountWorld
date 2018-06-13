@@ -111,6 +111,13 @@ def generate_story(story, entities, objects, locations):
     action = random.choice(action_choices)
 
     if action == 'move':
+
+        #make sure we're already at a location
+        assert actor.position is not None
+
+        #make sure there is another location to actually go to
+        assert len(locations) > 1
+
         #only want to move to locations not already at
         available_locations = [l.name for l in locations if l.name is not actor.position]
         
@@ -131,6 +138,10 @@ def generate_story(story, entities, objects, locations):
         return story, entities, objects, locations
 
     elif action == 'pick':
+
+        #make sure we're at a location
+        assert actor.position is not None
+
         #select which object to pick up
         picked_object = random.choice(objects).name
 

@@ -208,132 +208,132 @@ def generate_story(story, entities, objects, locations):
 
 def generate_questions(questions, entities, objects, locations):
 
-    #how many <object> is <entity> carrying?
+    #how many <object> is <entity> carrying ?
     for ent in entities:
         for obj in objects:
             question = f'how many {obj.name} is {ent.name} carrying ?'
             answer = ent.inventory[obj.name]
             questions[question].append(answer)
 
-    #how many entities picked up <object>?
+    #how many entities picked up <object> ?
     for obj in objects:
         question = f'how many entities picked up {obj.name} ?'
         answer = len([x for x in obj.picked_entity.values() if len(x) > 0])
         questions[question].append(answer)
 
-    #how many times were <object> picked up in total?
+    #how many times were <object> picked up in total ?
     for obj in objects:
         question = f'how many times were {obj.name} picked up in total ?'
         answer = len(obj.n_picked)
         questions[question].append(answer)
 
-    #how many <object> were picked up in total?
+    #how many <object> were picked up in total ?
     for obj in objects:
         question = f'how many {obj.name} were picked up in total ?'
         answer = sum(obj.n_picked)
         questions[question].append(answer)
 
-    #how many entities dropped <object>?
+    #how many entities dropped <object> ?
     for obj in objects:
         question = f'how many entities dropped {obj.name} ?'
         answer = len([x for x in obj.dropped_entity.values() if len(x) > 0])
         questions[question].append(answer)
 
-    #how many times were <object> dropped in total?
+    #how many times were <object> dropped in total ?
     for obj in objects:
         question = f'how many times were {obj.name} dropped in total ?'
         answer = len(obj.n_dropped)
         questions[question].append(answer)
 
-    #how many <object> were dropped in total?
+    #how many <object> were dropped in total ?
     for obj in objects:
         question = f'how many {obj.name} were dropped in total ?'
         answer = sum(obj.n_dropped)
         questions[question].append(answer)
 
-    #how many different objects were picked up from <location>?
+    #how many different objects were picked up from the <location> ?
     for loc in locations:
         question = f'how many different objects were picked up from the {loc.name} ?'
         answer = len([x for x in obj.picked_location.values() if len(x) > 0])
         questions[question].append(answer)
 
-    #how many times were <object> picked up from <location>?
+    #how many times were <object> picked up from the <location> ?
     for obj in objects:
         for loc in locations:
             question = f'how many times were {obj.name} picked up from the {loc.name} ?'
             answer = len(obj.picked_location[loc.name])
             questions[question].append(answer)
 
-    #how many <object> were picked up from <location>?
+    #how many <object> were picked up from the <location> ?
     for obj in objects:
         for loc in locations:
             question = f'how many {obj.name} were picked up from the {loc.name} ?'
             answer = sum(obj.picked_location[loc.name])
             questions[question].append(answer)
 
-    #how many times did <entity> pick up <object>?
+    #how many times did <entity> pick up <object> ?
     for obj in objects:
         for ent in entities:
             question = f'how many times did {ent.name} pick up {obj.name} ?'
             answer = len(obj.picked_entity[ent.name])
             questions[question].append(answer)
 
-    #how many <object> did <entity> pick up?
+    #how many <object> did <entity> pick up ?
     for obj in objects:
         for ent in entities:
             question = f'how many {obj.name} did {ent.name} pick up ?'
             answer = sum(obj.picked_entity[ent.name])
             questions[question].append(answer)
 
-    #how many different objects were dropped at <location>?
+    #how many different objects were dropped at the <location> ?
     for loc in locations:
         question = f'how many different objects were dropped at the {loc.name} ?'
         answer = len([x for x in obj.dropped_location.values() if len(x) > 0])
         questions[question].append(answer)
 
-    #how many times were <object> dropped at <location>?
+    #how many times were <object> dropped at the <location> ?
     for obj in objects:
         for loc in locations:
             question = f'how many times were {obj.name} dropped at the {loc.name} ?'
             answer = len(obj.dropped_location[loc.name])
             questions[question].append(answer)
 
-    #how many <object> were dropped at <location>?
+    #how many <object> were dropped at the <location> ?
     for obj in objects:
         for loc in locations:
             question = f'how many {obj.name} were dropped at the {loc.name} ?'
             answer = sum(obj.dropped_location[loc.name])
             questions[question].append(answer)
 
-    #how many times did <entity> drop <object>?
+    #how many times did <entity> drop <object> ?
     for obj in objects:
         for ent in entities:
             question = f'how many times did {ent.name} drop {obj.name} ?'
             answer = len(obj.dropped_entity[ent.name])
             questions[question].append(answer)
 
-    #how many <object> did <entity> drop?
+    #how many <object> did <entity> drop ?
     for obj in objects:
         for ent in entities:
             question = f'how many {obj.name} did {ent.name} drop ?'
             answer = len(obj.dropped_entity[ent.name])
             questions[question].append(answer)
 
-    #how many entities visited <location>?
+    #how many entities visited the <location> ?
     for ent in entities:
         for loc in locations:
-            question = f'how many entities visited the the {loc.name} ?'
+            question = f'how many entities visited the {loc.name} ?'
             answer = len([x for x in loc.entity_visits.values() if x > 0])
             questions[question].append(answer)
 
-    #how many times did <entity> visit <location>?
+    #how many times did <entity> visit <location> ?
     for ent in entities:
         for loc in locations:
             question = f'how many times did {ent.name} visit the {loc.name} ?'
             answer = loc.entity_visits[ent.name]
             questions[question].append(answer)
 
-    #how many times was <location> visited in total?
+    #how many times was the <location> visited in total ?
     for ent in entities:
         for loc in locations:
             question = f'how many times was the {loc.name} visited in total ?'

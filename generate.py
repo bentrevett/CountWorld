@@ -1,18 +1,29 @@
-import json
 import countworld
-import os
-from collections import Counter
+import argparse
 
-N_EXAMPLES = 100_000 #examples
-N_ENTITIES = 2 #entities per story
-N_OBJECTS = 2 #objects per story
-N_LOCATIONS = 2 #locations per story
-STORY_LENGTH = 20 #story length
-N_QUESTIONS = 5 #questions per story
-SINGLE_ANSWER = True #single answer
-RANDOM_SEED = 1234 #random seed
+parser = argparse.ArgumentParser(description='Generate countworld examples')
+parser.add_argument('--n_examples', default=100_000, type=int, help='Number of (S,Q,A) examples')
+parser.add_argument('--n_entities', default=2, type=int, help='Number of entities per story')
+parser.add_argument('--n_objects', default=2, type=int, help='Number of objects per story')
+parser.add_argument('--n_locations', default=2, type=int, help='Number of locations per story')
+parser.add_argument('--story_length', default=20, type=int, help='Number of sentences in a story')
+parser.add_argument('--n_questions', default=1, type=int, help='Number of questions for each story')
+parser.add_argument('--multi_answer', action='store_false', help='Use this flag to get answer for every sentence in a story')
+parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
+parser.add_argument('--ratio', default=[0.8,0.1,0.1], nargs='+', help='Train/Valid/Test example split ratio')
+args = parser.parse_args()
 
-print('Generating examples...')
+N_EXAMPLES = args.n_examples #examples
+N_ENTITIES = args.n_entities #entities per story
+N_OBJECTS = args.n_objects #objects per story
+N_LOCATIONS = args.n_locations #locations per story
+STORY_LENGTH = args.story_length #story length
+N_QUESTIONS = args.n_questions #questions per story
+SINGLE_ANSWER = args.multi_answer #single answer
+RANDOM_SEED = args.seed #random seed
+TRAIN_VALID_TEST_RATIO = args.ratio
+
+assert (len(TRAIN_VALID_TEST_RATIO) == 3) and (sum(TRAIN_VALID_TEST_RATIO) == 1)
 
 examples = countworld.generate_examples(N_EXAMPLES, 
                                         N_ENTITIES, 
@@ -23,48 +34,27 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         SINGLE_ANSWER, 
                                         RANDOM_SEED) 
 
-"""
-PyTorch expects JSON data to be one JSON object per line
-We also split the story statements and question/answer pair into their own key-value pairs
-"""
+N_TRAIN_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[0])
+N_VALID_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[1])
+N_TEST_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[2])
 
-train_examples = examples[:80_000]
-val_examples = examples[80_000:90_000]
-test_examples = examples[90_000:]
+train_examples = examples[:N_TRAIN_EXAMPLES]
+valid_examples = examples[N_TRAIN_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES]
+test_examples = examples[N_TRAIN_EXAMPLES+N_VALID_EXAMPLES:]
 
-cnt = Counter()
+def examples_to_file(name, examples):
 
-for example in examples:
-    questions = example['questions']
-    for (q, a) in questions:
-        cnt.update([a])
+    with open(f'data/{name}.txt', 'w+') as f:
+        for ex in examples:
+            story = ex['story']
+            for s in story:
+                f.write(f's {s}\n')
+            questions = ex['questions']
+            for (q, _) in questions:
+                f.write(f'q {q}\n')
+            for (_, a) in questions:
+                f.write(f'a {a}\n')
 
-total_answers = sum(cnt.values())
-
-assert total_answers == N_EXAMPLES*N_QUESTIONS
-
-for k, v in cnt.items():
-    print(f'answer {k}, count {v}, pct:{v/total_answers:.2f}')
-
-del examples
-
-if not os.path.isdir('data'):
-    os.mkdir('data')
-
-def create_datasets(name, examples):
-    with open(f'data/{name}.json', 'w') as w:
-        for example in examples:
-            temp = dict()
-            story = example['story']
-            for i, s in enumerate(story):
-                temp[f'story_{i}'] = s
-            questions = example['questions']
-            for i, (q, a) in enumerate(questions):
-                temp[f'question_{i}'] = q
-                temp[f'answer_{i}'] = a
-            json.dump(temp, w)
-            w.write('\n')
-
-create_datasets('train', train_examples)
-create_datasets('val', val_examples)
-create_datasets('test', test_examples)
+examples_to_file('train', train_examples)
+examples_to_file('valid', valid_examples)
+examples_to_file('test', test_examples)

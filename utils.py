@@ -108,9 +108,9 @@ def vectorize(data, word2idx):
         for sent in story:
             temp_story += [[word2idx[w] for w in sent]]
         for q in query:
-            temp_query += [word2idx[w] for w in q]
+            temp_query += [[word2idx[w] for w in q]]
         for a in answer:
-            temp_answer += [int(w) for w in a]
+            temp_answer += [[int(w) for w in a]]
         temp.append([temp_story, temp_query, temp_answer])
         
     return temp

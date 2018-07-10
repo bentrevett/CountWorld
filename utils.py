@@ -85,12 +85,13 @@ def create_vocab(all_data):
             for query in q:
                 unique_words.update(query)
 
-    unique_words.remove('<pad>')
+    if '<pad>' in unique_words:
+        unique_words.remove('<pad>')
     
     word2idx = {'<pad>': 0}
     idx2word = {0: '<pad>'}
     
-    for i, w in enumerate(unique_words):
+    for i, w in enumerate(unique_words, start=1):
         word2idx[w] = i
         idx2word[i] = w
     

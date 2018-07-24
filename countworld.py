@@ -320,11 +320,10 @@ def generate_questions(questions, entities, objects, locations):
             questions[question].append(answer)
 
     #how many entities visited the <location> ?
-    for ent in entities:
-        for loc in locations:
-            question = f'how many entities visited the {loc.name} ?'
-            answer = len([x for x in loc.entity_visits.values() if x > 0])
-            questions[question].append(answer)
+    for loc in locations:
+        question = f'how many entities visited the {loc.name} ?'
+        answer = len([x for x in loc.entity_visits.values() if x > 0])
+        questions[question].append(answer)
 
     #how many times did <entity> visit <location> ?
     for ent in entities:
@@ -334,11 +333,10 @@ def generate_questions(questions, entities, objects, locations):
             questions[question].append(answer)
 
     #how many times was the <location> visited in total ?
-    for ent in entities:
-        for loc in locations:
-            question = f'how many times was the {loc.name} visited in total ?'
-            answer = sum([x for x in loc.entity_visits.values()])
-            questions[question].append(answer)
+    for loc in locations:
+        question = f'how many times was the {loc.name} visited in total ?'
+        answer = sum([x for x in loc.entity_visits.values()])
+        questions[question].append(answer)
 
     return questions
 

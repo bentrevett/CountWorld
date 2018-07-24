@@ -147,7 +147,7 @@ def load_data(data_dir, device):
     train_data = vectorize(train_data, word2idx)
     valid_data = vectorize(valid_data, word2idx)
     test_data = vectorize(test_data, word2idx)
-    
+
     #turn from list into PyTorch Dataset object
     train_data = to_dataset(train_data, device)
     valid_data = to_dataset(valid_data, device)

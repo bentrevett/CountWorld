@@ -53,7 +53,11 @@ def examples_to_file(name, examples):
             for (q, _) in questions:
                 f.write(f'q {q}\n')
             for (_, a) in questions:
-                f.write(f'a {a}\n')
+                if isinstance(a, list):
+                    a = ' '.join([str(_a) for _a in a])
+                    f.write(f'a {a}\n')
+                else:
+                    f.write(f'a {a}\n')
 
 examples_to_file('train', train_examples)
 examples_to_file('valid', valid_examples)

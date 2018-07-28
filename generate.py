@@ -2,28 +2,31 @@ import countworld
 import argparse
 
 parser = argparse.ArgumentParser(description='Generate countworld examples')
-parser.add_argument('--n_examples', default=100_000, type=int, help='Number of (S,Q,A) examples')
-parser.add_argument('--n_entities', default=2, type=int, help='Number of entities per story')
-parser.add_argument('--n_objects', default=2, type=int, help='Number of objects per story')
-parser.add_argument('--n_locations', default=2, type=int, help='Number of locations per story')
-parser.add_argument('--story_length', default=20, type=int, help='Number of sentences in a story')
-parser.add_argument('--n_questions', default=1, type=int, help='Number of questions for each story')
-parser.add_argument('--multi_answer', action='store_false', help='Use this flag to get answer for every sentence in a story')
+parser.add_argument('--n_examples', default=10_000, type=int, help='Number of (S,Q,A) examples')
+parser.add_argument('--n_entities_min', default=2, type=int, help='Minimum number of entities per story')
+parser.add_argument('--n_entities_max', default=2, type=int, help='Maximum number of entities per story')
+parser.add_argument('--n_objects_min', default=2, type=int, help='Minimum number of objects per story')
+parser.add_argument('--n_objects_max', default=2, type=int, help='Maximum number of objects per story')
+parser.add_argument('--n_locations_min', default=2, type=int, help='Minimum number of locations per story')
+parser.add_argument('--n_locations_max', default=2, type=int, help='Maximm number of locations per story')
+parser.add_argument('--story_length_min', default=20, type=int, help='Minimum number of sentences in a story')
+parser.add_argument('--story_length_max', default=20, type=int, help='Maximum number of sentences in a story')
+parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
+parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
+parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
+parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
-parser.add_argument('--ratio', default=[0.8,0.1,0.1], nargs='+', help='Train/Valid/Test example split ratio')
 args = parser.parse_args()
 
 N_EXAMPLES = args.n_examples #examples
-N_ENTITIES = args.n_entities #entities per story
-N_OBJECTS = args.n_objects #objects per story
-N_LOCATIONS = args.n_locations #locations per story
-STORY_LENGTH = args.story_length #story length
-N_QUESTIONS = args.n_questions #questions per story
-SINGLE_ANSWER = args.multi_answer #single answer
+N_ENTITIES = (args.n_entities_min, args.n_entities_max) #(min, max) entities per story
+N_OBJECTS = (args.n_objects_min, args.n_objects_max) #(min, max) objects per story
+N_LOCATIONS = (args.n_locations_min, args.n_locations_max) #(min, max) locations per story
+STORY_LENGTH = (args.story_length_min, args.story_length_max) #(min, max) story length
+N_QUESTIONS = (args.n_questions_min, args.n_questions_max) #(min, max) questions per story
+SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
+PICK_MAX = args.pick_max #maximum items to pick up at once
 RANDOM_SEED = args.seed #random seed
-TRAIN_VALID_TEST_RATIO = args.ratio
-
-assert (len(TRAIN_VALID_TEST_RATIO) == 3) and (sum(TRAIN_VALID_TEST_RATIO) == 1)
 
 examples = countworld.generate_examples(N_EXAMPLES, 
                                         N_ENTITIES, 
@@ -31,12 +34,13 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         N_LOCATIONS, 
                                         STORY_LENGTH, 
                                         N_QUESTIONS, 
-                                        SINGLE_ANSWER, 
+                                        SUPPORTING_ANSWERS,
+                                        PICK_MAX,
                                         RANDOM_SEED) 
 
-N_TRAIN_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[0])
-N_VALID_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[1])
-N_TEST_EXAMPLES = int(N_EXAMPLES*TRAIN_VALID_TEST_RATIO[2])
+N_TRAIN_EXAMPLES = int(N_EXAMPLES*0.8)
+N_VALID_EXAMPLES = int(N_EXAMPLES*0.1)
+N_TEST_EXAMPLES = int(N_EXAMPLES*0.1)
 
 train_examples = examples[:N_TRAIN_EXAMPLES]
 valid_examples = examples[N_TRAIN_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES]

@@ -1,4 +1,5 @@
 import countworld
+from collections import defaultdict
 import argparse
 
 parser = argparse.ArgumentParser(description='Generate countworld examples')
@@ -13,8 +14,11 @@ parser.add_argument('--story_length_min', default=20, type=int, help='Minimum nu
 parser.add_argument('--story_length_max', default=20, type=int, help='Maximum number of sentences in a story')
 parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
 parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
+parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum value that an answer can be')
+parser.add_argument('--answer_values_max', default=10, type=int, help='Maximum value that an answer can be')
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
 parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
+parser.add_argument('--balance', action='store_true', help='#TODO')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
 args = parser.parse_args()
 
@@ -24,6 +28,7 @@ N_OBJECTS = (args.n_objects_min, args.n_objects_max) #(min, max) objects per sto
 N_LOCATIONS = (args.n_locations_min, args.n_locations_max) #(min, max) locations per story
 STORY_LENGTH = (args.story_length_min, args.story_length_max) #(min, max) story length
 N_QUESTIONS = (args.n_questions_min, args.n_questions_max) #(min, max) questions per story
+ANSWER_VALUES = (args.answer_values_min, args.answer_values_max) #(min, max) value of answers
 SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
 PICK_MAX = args.pick_max #maximum items to pick up at once
 RANDOM_SEED = args.seed #random seed
@@ -33,10 +38,28 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         N_OBJECTS, 
                                         N_LOCATIONS, 
                                         STORY_LENGTH, 
-                                        N_QUESTIONS, 
+                                        N_QUESTIONS,
+                                        ANSWER_VALUES,
                                         SUPPORTING_ANSWERS,
                                         PICK_MAX,
                                         RANDOM_SEED) 
+
+if args.balance:
+
+    raise NotImplementedError('Balancing of answers not yet implemented!')
+
+    #count answer distribution
+    dist = defaultdict(int)
+    for ex in examples:
+        questions = ex['questions']
+        for (_, a) in questions:
+            if isinstance(a, list):
+                dist[a[-1]] += 1
+            else:
+                dist[a] += 1
+
+    print(dist)
+    assert 1 == 2
 
 N_TRAIN_EXAMPLES = int(N_EXAMPLES*0.8)
 N_VALID_EXAMPLES = int(N_EXAMPLES*0.1)

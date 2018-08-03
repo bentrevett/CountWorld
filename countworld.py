@@ -11,7 +11,8 @@ def generate_examples(n_examples,
                       n_objects, 
                       n_locations, 
                       story_length, 
-                      n_questions, 
+                      n_questions,
+                      answer_values,
                       supporting_answers,
                       pick_max,
                       random_seed=None):
@@ -22,6 +23,7 @@ def generate_examples(n_examples,
     n_locations (tuple[int]): 2 element tuple with (min, max) number of unique locations in the story, selected uniformly
     story_length (tuple[int]): 2 element tuple with (min, max) number of statements that make up story, selected uniformly
     n_questions (tuple[int]): 2 element tuple with (min, max) number of questions asked at the end of the story, selected uniformly
+    answer_values (tuple[int]): 2 element tuple with (min, max) the minimum and maximum values an answer can be
     supporting_answers (bool): if False, the answers are a single integer which is the answer at the end of the story
                           if True, the answers are lists equal to length of the story, with each element being
                           the answer at that point in the story
@@ -33,12 +35,13 @@ def generate_examples(n_examples,
     if random_seed is not None:
         random.seed(random_seed)
 
-    #make sure we don't have min > max for entities/objects/locations/questions/story_length
+    #make sure we don't have min > max for entities/objects/locations/questions/story_length/answer_vals
     assert n_entities[0] <= n_entities[1]
     assert n_objects[0] <= n_objects[1]
     assert n_locations[0] <= n_locations[1]
     assert n_questions[0] <= n_questions[1]
     assert story_length[0] <= story_length[1]
+    assert answer_values[0] <= answer_values[1]
 
     #make sure we don't have > max number of entities/objects/locations
     assert n_entities[1] <= len(ENTITY_NAMES)
@@ -88,10 +91,14 @@ def generate_examples(n_examples,
         #which is a list of the answer to the question at each step of the story
         #want to transform into tuple, where if we only want a single answer, the answer is the last 
         #value in the answer list
+        #also makes sure answers are within specified range
         if supporting_answers:
-            questions = [(k, v) for k, v in questions.items()]
+            questions = [(k, v) for k, v in questions.items() if v[-1] >= answer_values and v <= answer_values[1]]
         else:
-            questions = [(k, v[-1]) for k, v in questions.items()]
+            questions = [(k, v[-1]) for k, v in questions.items() if v[-1] >= answer_values[0] and v[-1] <= answer_values[1]]
+
+        #check if pruning meant we don't have enough questions
+        assert len(questions) >= example_n_questions
 
         #randomly shuffle so questions are different
         random.shuffle(questions)

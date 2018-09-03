@@ -18,8 +18,8 @@ parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum va
 parser.add_argument('--answer_values_max', default=10, type=int, help='Maximum value that an answer can be')
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
 parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
-parser.add_argument('--balance', action='store_true', help='#TODO')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
+parser.add_argument('--balance', action='store_true', help='#TODO')
 args = parser.parse_args()
 
 N_EXAMPLES = args.n_examples #examples
@@ -45,21 +45,7 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         RANDOM_SEED) 
 
 if args.balance:
-
     raise NotImplementedError('Balancing of answers not yet implemented!')
-
-    #count answer distribution
-    dist = defaultdict(int)
-    for ex in examples:
-        questions = ex['questions']
-        for (_, a) in questions:
-            if isinstance(a, list):
-                dist[a[-1]] += 1
-            else:
-                dist[a] += 1
-
-    print(dist)
-    assert 1 == 2
 
 N_TRAIN_EXAMPLES = int(N_EXAMPLES*0.8)
 N_VALID_EXAMPLES = int(N_EXAMPLES*0.1)

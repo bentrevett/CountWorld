@@ -43,7 +43,7 @@ def generate_examples(n_examples,
     assert story_length[0] <= story_length[1]
     assert answer_values[0] <= answer_values[1]
 
-    #make sure we don't have > max number of entities/objects/locations
+    #make sure we don't have more than max number of entities/objects/locations
     assert n_entities[1] <= len(ENTITY_NAMES)
     assert n_objects[1] <= len(OBJECT_NAMES)
     assert n_locations[1] <= len(LOCATION_NAMES)
@@ -93,7 +93,7 @@ def generate_examples(n_examples,
         #value in the answer list
         #also makes sure answers are within specified range
         if supporting_answers:
-            questions = [(k, v) for k, v in questions.items() if v[-1] >= answer_values and v <= answer_values[1]]
+            questions = [(k, v) for k, v in questions.items() if min(v) >= answer_values[0] and max(v) <= answer_values[1]]
         else:
             questions = [(k, v[-1]) for k, v in questions.items() if v[-1] >= answer_values[0] and v[-1] <= answer_values[1]]
 

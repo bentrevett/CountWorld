@@ -43,14 +43,18 @@ def generate_examples(n_examples,
     assert story_length[0] <= story_length[1]
     assert answer_values[0] <= answer_values[1]
 
+    #make sure we have sensibile values
+    assert n_examples >= 20 #need this many for the utils.py script
+    assert n_entities[0] > 0 #make sure we have an entity
+    assert n_locations[0] > 0 #make sure we have at least one location to initially travel to
+    assert n_objects[0] > 0 or n_locations[0] > 1 #can only have no objects if we have at least 2 locatons
+    assert story_length[0] > 0 #make sure story has at least one sentence 
+    assert n_questions[0] > 0 #make sure we ask at least one question
+
     #make sure we don't have more than max number of entities/objects/locations
     assert n_entities[1] <= len(ENTITY_NAMES)
     assert n_objects[1] <= len(OBJECT_NAMES)
     assert n_locations[1] <= len(LOCATION_NAMES)
-
-    #make sure we don't want to ask more questions than there are possible questions
-    #THIS MUST BE HARD CODED
-    assert n_questions[1] <= 20
 
     #must be able to pick up at least 1 object
     assert pick_max > 0

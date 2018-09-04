@@ -1,5 +1,4 @@
 import os
-import torch.utils.data
 
 def data_from_files(file):
     """
@@ -76,25 +75,22 @@ def create_vocab(all_data):
     Given a list of list of (story, query, answer) tuples, create the vocabulary word-to-index and index-to-word mappings
     Makes sure the padding token is index 0
     """
-    unique_words = set()
+    word2idx = {'<pad>': 0}
+    idx2word = {0: '<pad>'}
     
     for data in all_data:
         for s, q, _ in data:
             for sent in s:
-                unique_words.update(sent)
+                for word in sent:
+                    if word not in word2idx:
+                        word2idx[word] = len(word2idx)
+                        idx2word[len(idx2word)] = word
             for query in q:
-                unique_words.update(query)
+                for word in query:
+                    if word not in word2idx:
+                        word2idx[word] = len(word2idx)
+                        idx2word[len(idx2word)] = word
 
-    if '<pad>' in unique_words:
-        unique_words.remove('<pad>')
-    
-    word2idx = {'<pad>': 0}
-    idx2word = {0: '<pad>'}
-    
-    for i, w in enumerate(unique_words, start=1):
-        word2idx[w] = i
-        idx2word[i] = w
-    
     return word2idx, idx2word
         
 def vectorize(data, word2idx):
@@ -112,20 +108,11 @@ def vectorize(data, word2idx):
             temp_query += [[word2idx[w] for w in q]]
         for a in answer:
             temp_answer += [[int(w) for w in a]]
-        temp.append([temp_story, temp_query, temp_answer])
+        temp.append((temp_story, temp_query, temp_answer))
         
     return temp
-  
-def to_dataset(data, device):
-    """
-    Converts the data which is a list of lists into a PyTorch Dataset object which can be fed to an iterator using PyTorch DataLoaders
-    """
-    data_s, data_q, data_a = zip(*data)
-    data_s, data_q, data_a = torch.LongTensor(data_s).to(device), torch.LongTensor(data_q).to(device), torch.LongTensor(data_a).to(device)
-    data = torch.utils.data.TensorDataset(data_s, data_q, data_a)
-    return data
     
-def load_data(data_dir, device):
+def load_data(data_dir):
      
     #get (s,q,a) for each file
     train_data = data_from_files(os.path.join(data_dir, 'train.txt'))
@@ -143,19 +130,9 @@ def load_data(data_dir, device):
     #create vocab
     word2idx, idx2word = create_vocab([train_data, valid_data, test_data])
     
-    #vectorize
+    #vectorize, i.e. go from words to indexes
     train_data = vectorize(train_data, word2idx)
     valid_data = vectorize(valid_data, word2idx)
     test_data = vectorize(test_data, word2idx)
-
-    #turn from list into PyTorch Dataset object
-    train_data = to_dataset(train_data, device)
-    valid_data = to_dataset(valid_data, device)
-    test_data = to_dataset(test_data, device)
-    
-    #the Dataset objects just need to be passed to an iterator, e.g.:
-    # train_iterator = torch.utils.data.DataLoader(train_data, batch_size=32)
-    # for s, q, a in train_iterator:
-    #     do training here!
 
     return train_data, valid_data, test_data, word2idx, idx2word

@@ -40,26 +40,33 @@ def get_max_lengths(all_data):
     """
     max_story_len = 0
     max_sent_len = 0
+    max_queries = 0
     max_query_len = 0
+    using_supporting_answers = False
     
     for data in all_data:
-        for story, query, _ in data:
+        for story, query, answer in data:
             if len(story) > max_story_len:
                 max_story_len = len(story)
             for sentence in story:
                 if len(sentence) > max_sent_len:
                     max_sent_len = len(sentence)
+            if len(query) > max_queries:
+                max_queries = len(query)
             for q in query:
                 if len(q) > max_query_len:
                     max_query_len = len(q)
+            for a in answer:
+                if len(a) > 1:
+                    using_supporting_answers = True
                 
-    return max_story_len, max_sent_len, max_query_len
+    return max_story_len, max_sent_len, max_queries, max_query_len, using_supporting_answers
             
-def pad_data(data, max_story_len, max_sent_len, max_query_len):
+def pad_data(data, max_story_len, max_sent_len, max_queries, max_query_len, using_supporting_answers):
     """
     Given a list of (story, query, answer) tuples, pad them all to the maximum lenghts provided
     """
-    for i, (story, query, _) in enumerate(data):
+    for i, (story, query, answer) in enumerate(data):
         for j, sentence in enumerate(story):
             if len(sentence) < max_sent_len:
                 data[i][0][j].extend(['<pad>'] * (max_sent_len - len(sentence)))
@@ -68,6 +75,15 @@ def pad_data(data, max_story_len, max_sent_len, max_query_len):
         for j, q in enumerate(query):
             if len(q) < max_query_len:
                 data[i][1][j].extend(['<pad>'] * (max_query_len - len(q)))
+        while len(query) < max_queries:
+            data[i][1].append(['<pad>'] * max_query_len)
+        if using_supporting_answers:
+            for j, a in enumerate(answer):
+                if len(a) < max_story_len:                  
+                    data[i][2][j].extend([-1] * (max_story_len - len(a)))
+        while len(answer) < max_queries:
+            data[i][2].append([-1] * max_story_len if using_supporting_answers else [-1])
+            
     return data
     
 def create_vocab(all_data):
@@ -120,13 +136,13 @@ def load_data(data_dir):
     test_data = data_from_files(os.path.join(data_dir, 'test.txt'))
 
     #get sizes for padding
-    max_story_len, max_sent_len, max_query_len = get_max_lengths([train_data, valid_data, test_data])
+    max_story_len, max_sent_len, max_queries, max_query_len, using_supporting_answers = get_max_lengths([train_data, valid_data, test_data])
 
     #now do padding
-    train_data = pad_data(train_data, max_story_len, max_sent_len, max_query_len)
-    valid_data = pad_data(valid_data, max_story_len, max_sent_len, max_query_len)
-    test_data = pad_data(test_data, max_story_len, max_sent_len, max_query_len)
-        
+    train_data = pad_data(train_data, max_story_len, max_sent_len, max_queries, max_query_len, using_supporting_answers)
+    valid_data = pad_data(valid_data, max_story_len, max_sent_len, max_queries,max_query_len, using_supporting_answers)
+    test_data = pad_data(test_data, max_story_len, max_sent_len, max_queries,max_query_len, using_supporting_answers)
+
     #create vocab
     word2idx, idx2word = create_vocab([train_data, valid_data, test_data])
     

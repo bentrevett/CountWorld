@@ -2,7 +2,7 @@ import countworld
 from collections import defaultdict
 import argparse
 
-parser = argparse.ArgumentParser(description='Generate countworld examples')
+parser = argparse.ArgumentParser(description='Generate countworld examples', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--n_examples', default=10_000, type=int, help='Number of (S,Q,A) examples')
 parser.add_argument('--n_entities_min', default=2, type=int, help='Minimum number of entities per story')
 parser.add_argument('--n_entities_max', default=2, type=int, help='Maximum number of entities per story')

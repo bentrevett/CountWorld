@@ -32,6 +32,8 @@ def data_from_files(file):
             temp_a.append(answer)
             answers = True
 
+    data.append((temp_s, temp_q, temp_a))
+
     return data
 
 def get_max_lengths(all_data):

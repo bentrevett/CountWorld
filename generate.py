@@ -4,15 +4,15 @@ import argparse
 import random
 
 parser = argparse.ArgumentParser(description='Generate countworld examples', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--n_examples', default=10_000, type=int, help='Number of (S,Q,A) examples')
+parser.add_argument('--n_examples', default=100_000, type=int, help='Number of (S,Q,A) examples')
 parser.add_argument('--n_entities_min', default=2, type=int, help='Minimum number of entities per story')
 parser.add_argument('--n_entities_max', default=2, type=int, help='Maximum number of entities per story')
 parser.add_argument('--n_objects_min', default=2, type=int, help='Minimum number of objects per story')
 parser.add_argument('--n_objects_max', default=2, type=int, help='Maximum number of objects per story')
 parser.add_argument('--n_locations_min', default=2, type=int, help='Minimum number of locations per story')
 parser.add_argument('--n_locations_max', default=2, type=int, help='Maximm number of locations per story')
-parser.add_argument('--story_length_min', default=20, type=int, help='Minimum number of sentences in a story')
-parser.add_argument('--story_length_max', default=20, type=int, help='Maximum number of sentences in a story')
+parser.add_argument('--story_length_min', default=10, type=int, help='Minimum number of sentences in a story')
+parser.add_argument('--story_length_max', default=10, type=int, help='Maximum number of sentences in a story')
 parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
 parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
 parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum value that an answer can be')

@@ -78,8 +78,8 @@ class RNN(nn.Module):
 
         return o
 
-class MemoryNetwork4(nn.Module):
-    def __init__(self, vocab_size, emb_dim, sent_len, story_len, pos_enc, temp_enc, n_hops):
+class MemoryNetwork(nn.Module):
+    def __init__(self, vocab_size, emb_dim, out_dim, sent_len, story_len, pos_enc, temp_enc, n_hops):
         super().__init__()
         
         self.vocab_size = vocab_size
@@ -102,7 +102,7 @@ class MemoryNetwork4(nn.Module):
         if self.pos_enc:
             J = self.sent_len
             d = self.emb_dim
-            self.l = torch.zeros(J, d).to(device)
+            self.l = torch.zeros(J, d)
             for j in range(1, J+1):
                 for k in range(1, d+1):
                     self.l[j-1][k-1] = (1 - j/J) - (k/d) * (1 - 2*j/J)
@@ -113,6 +113,8 @@ class MemoryNetwork4(nn.Module):
             self.T_A = nn.Parameter(torch.randn(self.story_len, self.emb_dim).normal_(0, 0.1))
             self.T_C = nn.Parameter(torch.randn(self.story_len, self.emb_dim).normal_(0, 0.1))
         
+        self.out = nn.Linear(emb_dim, out_dim)
+
     def forward(self, S, Q, linear):
         
         # S = [bsz, story len, sent len]
@@ -171,12 +173,6 @@ class MemoryNetwork4(nn.Module):
             #the next embedded query is the sum of the previous embedded query and the output
             U = U + O
                 
-        #get and reshape W
-        # W is embedding K, A^K, where K is the total number of hops (can also get with self.embeddings[-1])
-        W = self.embeddings[self.n_hops].weight.unsqueeze(0)
-        W = W.repeat(U.shape[0], 1, 1) #W = [bsz, vocab size, emb dim]
-               
-        #get probability distribution over vocab
-        A = torch.bmm(W, U.unsqueeze(2)).squeeze(2) # A = [bsz, vocab size]
+        A = self.out(U) # A = [bsz, out_dim]
         
         return A

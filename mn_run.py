@@ -8,17 +8,19 @@ import torch.optim as optim
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class Args():
-    def __init__(self, epochs, batch_size, clip, emb_dim, hid_dim, out_dim, dropout, seed):
+    def __init__(self, epochs, batch_size, clip, emb_dim, out_dim, pos_enc, temp_enc, n_hops, ls, seed):
         self.epochs = epochs
         self.batch_size = batch_size
         self.clip = clip
         self.emb_dim = emb_dim
-        self.hid_dim = hid_dim
         self.out_dim = out_dim
-        self.dropout = dropout
+        self.pos_enc = pos_enc
+        self.temp_enc = temp_enc
+        self.n_hops = n_hops
+        self.ls = ls
         self.seed = seed
     
-args = Args(100, 256, 100, 16, 256, 11, 0.1, 1234)
+args = Args(epochs=100, batch_size=256, clip=10, emb_dim=50, out_dim=11, pos_enc=True, temp_enc=True, n_hops=3, ls=True, seed=1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True
@@ -40,7 +42,7 @@ query_len = torch.tensor(q).shape[1]
 
 print(f'vocab size: {vocab_size}')
 
-model = models.RNN(vocab_size, args.emb_dim, args.hid_dim, args.out_dim, args.dropout)
+model = models.MemoryNetwork(vocab_size, args.emb_dim, args.out_dim, sent_len, story_len, args.pos_enc, args.temp_enc, args.n_hops)
 
 model = model.to(device)
 
@@ -51,7 +53,7 @@ optimizer = optim.Adam(model.parameters())
 
 criterion = criterion.to(device)
 
-def train(data, batch_size, model, criterion, optimizer):
+def train(data, batch_size, model, criterion, optimizer, linear):
 
     model.train()
 
@@ -76,7 +78,7 @@ def train(data, batch_size, model, criterion, optimizer):
         #batch_q = [bsz, n_queries, query_len]
         #batch_a = [bsz, n_queries, story_len if supporting_answers else 1]
 
-        fx = model(batch_s, batch_q)
+        fx = model(batch_s, batch_q, linear)
 
         loss = criterion(fx, batch_a)
 
@@ -90,9 +92,9 @@ def train(data, batch_size, model, criterion, optimizer):
         epoch_loss += loss.item()
         epoch_acc += correct
 
-    return epoch_loss / len(data), epoch_acc / len(data)
+    return epoch_loss / n_batches, epoch_acc / len(data)
 
-def evaluate(data, batch_size, model, criterion):
+def evaluate(data, batch_size, model, criterion, linear):
 
     model.eval()
 
@@ -115,18 +117,27 @@ def evaluate(data, batch_size, model, criterion):
             #batch_q = [bsz, n_queries, query_len]
             #batch_a = [bsz, n_queries, story_len if supporting_answers else 1]
 
-            fx = model(batch_s, batch_q)
+            fx = model(batch_s, batch_q, linear)
             pred = fx.max(1, keepdim=True)[1]
             correct = pred.eq(batch_a.view_as(pred)).sum().item()
             loss = criterion(fx, batch_a)
             epoch_acc += correct
             epoch_loss += loss.item()
 
-    return epoch_loss / len(data), epoch_acc / len(data)
+    return epoch_loss / n_batches, epoch_acc / len(data)
+
+prev_valid_loss = float('inf')
+
+linear = args.ls
 
 for epoch in range(args.epochs):
 
-    train_loss, train_acc = train(test_data, args.batch_size, model, criterion, optimizer)
-    valid_loss, valid_acc = evaluate(valid_data, args.batch_size, model, criterion)
+    train_loss, train_acc = train(test_data, args.batch_size, model, criterion, optimizer, linear)
+    valid_loss, valid_acc = evaluate(valid_data, args.batch_size, model, criterion, linear)
+
+    if args.ls and linear:
+        if prev_valid_loss < valid_loss:
+            linear = False
+        prev_valid_loss = valid_loss
 
     print(f'| epoch: {epoch+1:03} | train loss: {train_loss:.3f} | train acc: {train_acc:.2f} | valid loss: {valid_loss:.3f} | valid acc: {valid_acc:.2f}')

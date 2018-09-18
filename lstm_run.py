@@ -90,7 +90,7 @@ def train(data, batch_size, model, criterion, optimizer):
         epoch_loss += loss.item()
         epoch_acc += correct
 
-    return epoch_loss / len(data), epoch_acc / len(data)
+    return epoch_loss / n_batches, epoch_acc / len(data)
 
 def evaluate(data, batch_size, model, criterion):
 
@@ -122,7 +122,7 @@ def evaluate(data, batch_size, model, criterion):
             epoch_acc += correct
             epoch_loss += loss.item()
 
-    return epoch_loss / len(data), epoch_acc / len(data)
+    return epoch_loss / n_batches, epoch_acc / len(data)
 
 for epoch in range(args.epochs):
 

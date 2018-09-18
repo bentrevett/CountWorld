@@ -1,6 +1,7 @@
 import countworld
-from collections import defaultdict
+import operator
 import argparse
+import random
 
 parser = argparse.ArgumentParser(description='Generate countworld examples', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--n_examples', default=10_000, type=int, help='Number of (S,Q,A) examples')
@@ -15,7 +16,7 @@ parser.add_argument('--story_length_max', default=20, type=int, help='Maximum nu
 parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
 parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
 parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum value that an answer can be')
-parser.add_argument('--answer_values_max', default=10, type=int, help='Maximum value that an answer can be')
+parser.add_argument('--answer_values_max', default=9, type=int, help='Maximum value that an answer can be')
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
 parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
@@ -33,6 +34,8 @@ SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
 PICK_MAX = args.pick_max #maximum items to pick up at once
 RANDOM_SEED = args.seed #random seed
 
+random.seed(RANDOM_SEED)
+
 examples = countworld.generate_examples(N_EXAMPLES, 
                                         N_ENTITIES, 
                                         N_OBJECTS, 
@@ -45,7 +48,74 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         RANDOM_SEED) 
 
 if args.balance:
-    raise NotImplementedError('Balancing of answers not yet implemented!')
+    
+    assert SUPPORTING_ANSWERS == False
+    assert N_QUESTIONS[0] == N_QUESTIONS[1] == 1
+    
+    answer_dist = dict()
+
+    for ex in examples:
+        questions = ex['questions']
+        for (q, a) in questions:
+            if a in answer_dist:
+                answer_dist[a] += 1
+            else: 
+                answer_dist[a] = 1
+
+    lowest_a = min(answer_dist.items(), key=operator.itemgetter(1))[1]
+
+    print(f'Balancing... min: {lowest_a}, req: {N_EXAMPLES/len(answer_dist)}')
+
+    while lowest_a * len(answer_dist) < N_EXAMPLES:
+
+        RANDOM_SEED += 1
+
+        examples += countworld.generate_examples(N_EXAMPLES, 
+                                        N_ENTITIES, 
+                                        N_OBJECTS, 
+                                        N_LOCATIONS, 
+                                        STORY_LENGTH, 
+                                        N_QUESTIONS,
+                                        ANSWER_VALUES,
+                                        SUPPORTING_ANSWERS,
+                                        PICK_MAX,
+                                        RANDOM_SEED)
+
+        answer_dist = dict()
+        
+        for ex in examples:
+            questions = ex['questions']
+            for (q, a) in questions:
+                if a in answer_dist:
+                    answer_dist[a] += 1
+                else: 
+                    answer_dist[a] = 1
+
+        lowest_a = min(answer_dist.items(), key=operator.itemgetter(1))[1]
+
+        print(f'Balancing... min: {lowest_a}, req: {N_EXAMPLES/len(answer_dist)}')
+
+    random.shuffle(examples)
+
+    required_examples = N_EXAMPLES / len(answer_dist) 
+
+    temp_examples = []
+
+    answer_count = dict()
+
+    for ex in examples:
+        questions = ex['questions']
+        for (_, a) in questions:
+            if a in answer_count and answer_count[a] < required_examples:
+                temp_examples.append(ex)
+                answer_count[a] += 1
+            if a not in answer_count:
+                temp_examples.append(ex)
+                answer_count[a] = 1
+
+    examples = temp_examples
+
+    random.shuffle(examples)
 
 N_TRAIN_EXAMPLES = int(N_EXAMPLES*0.8)
 N_VALID_EXAMPLES = int(N_EXAMPLES*0.1)
@@ -53,7 +123,7 @@ N_TEST_EXAMPLES = int(N_EXAMPLES*0.1)
 
 train_examples = examples[:N_TRAIN_EXAMPLES]
 valid_examples = examples[N_TRAIN_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES]
-test_examples = examples[N_TRAIN_EXAMPLES+N_VALID_EXAMPLES:]
+test_examples = examples[N_TRAIN_EXAMPLES+N_VALID_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES+N_TEST_EXAMPLES]
 
 def examples_to_file(name, examples):
 

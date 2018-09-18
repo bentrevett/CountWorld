@@ -18,7 +18,7 @@ class Args():
         self.dropout = dropout
         self.seed = seed
     
-args = Args(100, 256, 100, 16, 256, 11, 0.1, 1234)
+args = Args(100, 256, 100, 64, 256, 10, 0.5, 1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True

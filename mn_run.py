@@ -20,7 +20,7 @@ class Args():
         self.ls = ls
         self.seed = seed
     
-args = Args(epochs=100, batch_size=256, clip=10, emb_dim=50, out_dim=11, pos_enc=True, temp_enc=True, n_hops=3, ls=True, seed=1234)
+args = Args(epochs=100, batch_size=256, clip=10, emb_dim=50, out_dim=10, pos_enc=True, temp_enc=True, n_hops=3, ls=True, seed=1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True

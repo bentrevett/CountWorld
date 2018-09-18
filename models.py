@@ -116,6 +116,8 @@ class MemoryNetwork(nn.Module):
         self.out = nn.Linear(emb_dim, out_dim)
 
     def forward(self, S, Q, linear):
+
+        self.l = self.l.to(S.device)
         
         # S = [bsz, story len, sent len]
         # Q = [bsz, q len]

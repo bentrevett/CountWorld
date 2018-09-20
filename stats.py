@@ -16,7 +16,7 @@ for c in contents:
 
 values = 0
 
-print(answer_values)
+print("answer:counts", answer_values)
 
 for answer, value in answer_values.items():
     values += value
@@ -24,4 +24,28 @@ for answer, value in answer_values.items():
 for answer, value in answer_values.items():
     answer_dist[answer] = value/values
 
-print(answer_dist)
+print("answer:percentages", answer_dist)
+print("examples", values)
+
+#count duplicates
+buffer = ''
+uniques = set()
+answers = False
+for c in contents:
+    if c.startswith('s'):
+        if answers:
+            uniques.add(buffer)
+            buffer = ''
+            answers = False
+        else:
+            buffer += c
+    if c.startswith('q'):
+        buffer += c
+    if c.startswith('a'):
+        answers = True
+        buffer += c
+
+if buffer != '':
+    uniques.add(buffer)
+
+print("unique examples", len(uniques))

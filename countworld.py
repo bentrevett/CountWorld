@@ -1,10 +1,16 @@
 import random
 from collections import defaultdict
 from tqdm import tqdm
+import numpy as np
 
 ENTITY_NAMES = ['ruben', 'jane', 'eric', 'eve', 'adam', 'claire', 'liam', 'emma', 'oliver', 'sophie']
 OBJECT_NAMES = ['leaves', 'rocks', 'flowers', 'insects', 'sticks', 'mushrooms', 'eggs', 'feathers', 'shells', 'berries']
 LOCATION_NAMES = ['park', 'forest', 'mountains', 'town', 'station', 'bridge', 'river', 'beach', 'school', 'stadium']
+
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=0)
 
 def generate_examples(n_examples, 
                       n_entities, 
@@ -15,6 +21,7 @@ def generate_examples(n_examples,
                       answer_values,
                       supporting_answers,
                       pick_max,
+                      balance,
                       random_seed=None):
     """
     n_examples (int): number of examples to generate
@@ -28,6 +35,7 @@ def generate_examples(n_examples,
                           if True, the answers are lists equal to length of the story, with each element being
                           the answer at that point in the story
     pick_max (int): when picking up items, picks up between [1, pick_max] items, selected uniformly
+    balance (bool): if True will try and balance the answers
     random_seed (int): random seed for reproducibility, leave None for random random seed
     """
 
@@ -59,8 +67,17 @@ def generate_examples(n_examples,
     #must be able to pick up at least 1 object
     assert pick_max > 0
 
+    #balancing currently only works with 1 question per story
+    if balance:
+        assert max(n_questions) == 1
+
     #list to store each story/question dict
     examples = []
+
+    #holds current frequency of answers
+    answer_count = dict()
+    for i in range(answer_values[0], answer_values[1]+1):
+        answer_count[i] = 1
 
     #generate examples
     for _ in tqdm(range(n_examples)):
@@ -107,8 +124,34 @@ def generate_examples(n_examples,
         #randomly shuffle so questions are different
         random.shuffle(questions)
 
-        #only get n_questions questions
-        questions = questions[:example_n_questions]
+        required_examples_per_class = n_examples / len(answer_count)
+
+        if balance:
+            choosing = True
+            qa = [(q, a) for (q, a) in answer_count.items()]
+            remaining_counts = [required_examples_per_class - v  for (k, v) in answer_count.items()]
+            probs = [p for p in softmax(remaining_counts)]
+            chosen_answer = random.choices(population=qa, weights=probs)[0][0]
+            candidate_qa = []
+
+            while choosing:
+                for (q, a) in questions:
+                    #group all that give same answer
+                    #print(chosen_answer, a)
+                    if a == chosen_answer:
+                        candidate_qa.append((q,a)) 
+
+                if len(candidate_qa) > 0:
+                    questions = random.choice(candidate_qa)
+                    questions = [questions]
+                    choosing = False
+                else:
+                    chosen_answer = random.randint(answer_values[0], answer_values[1])
+
+            answer_count[chosen_answer] += 1
+        else:
+            #only get n_questions questions
+            questions = questions[:example_n_questions]
 
         #append example to list
         examples.append({'story': story, 'questions': questions})

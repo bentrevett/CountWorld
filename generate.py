@@ -20,7 +20,7 @@ parser.add_argument('--answer_values_max', default=9, type=int, help='Maximum va
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
 parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
-parser.add_argument('--balance', action='store_true', help='#TODO')
+parser.add_argument('--balance', action='store_true', help='Makes sure we have an equal amount of all answers')
 args = parser.parse_args()
 
 N_EXAMPLES = args.n_examples #examples
@@ -33,6 +33,7 @@ ANSWER_VALUES = (args.answer_values_min, args.answer_values_max) #(min, max) val
 SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
 PICK_MAX = args.pick_max #maximum items to pick up at once
 RANDOM_SEED = args.seed #random seed
+BALANCE = args.balance #true if balancing
 
 random.seed(RANDOM_SEED)
 
@@ -45,6 +46,7 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         ANSWER_VALUES,
                                         SUPPORTING_ANSWERS,
                                         PICK_MAX,
+                                        BALANCE,
                                         RANDOM_SEED) 
 
 if args.balance:

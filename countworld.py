@@ -134,12 +134,17 @@ def generate_examples(n_examples,
             chosen_answer = random.choices(population=qa, weights=probs)[0][0]
             candidate_qa = []
 
+            full_a = []
+
             while choosing:
                 for (q, a) in questions:
+                    if supporting_answers:
+                        full_a = a
+                        a = a[-1]
                     #group all that give same answer
                     #print(chosen_answer, a)
                     if a == chosen_answer:
-                        candidate_qa.append((q,a)) 
+                        candidate_qa.append((q,full_a if supporting_answers else a)) 
 
                 if len(candidate_qa) > 0:
                     questions = random.choice(candidate_qa)

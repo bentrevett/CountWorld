@@ -51,14 +51,15 @@ examples = countworld.generate_examples(N_EXAMPLES,
 
 if args.balance:
     
-    assert SUPPORTING_ANSWERS == False
-    assert N_QUESTIONS[0] == N_QUESTIONS[1] == 1
+    assert N_QUESTIONS[0] == N_QUESTIONS[1] == 1, 'Balancing works with one question only'
     
     answer_dist = dict()
 
     for ex in examples:
         questions = ex['questions']
         for (q, a) in questions:
+            if SUPPORTING_ANSWERS:
+                a = a[-1]
             if a in answer_dist:
                 answer_dist[a] += 1
             else: 
@@ -88,6 +89,8 @@ if args.balance:
         for ex in examples:
             questions = ex['questions']
             for (q, a) in questions:
+                if SUPPORTING_ANSWERS:
+                    a = a[-1]
                 if a in answer_dist:
                     answer_dist[a] += 1
                 else: 
@@ -108,6 +111,8 @@ if args.balance:
     for ex in examples:
         questions = ex['questions']
         for (_, a) in questions:
+            if SUPPORTING_ANSWERS:
+                a = a[-1]
             if a in answer_count and answer_count[a] < required_examples:
                 temp_examples.append(ex)
                 answer_count[a] += 1

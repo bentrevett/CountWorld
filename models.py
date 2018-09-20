@@ -3,18 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class RNN(nn.Module):
-    def __init__(self, vocab_size, emb_dim, hid_dim, out_dim, dropout):
+    def __init__(self, vocab_size, emb_dim, sent_hid_dim, story_hid_dim, out_dim, dropout):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, emb_dim)
-        self.sent_rnn = nn.LSTM(emb_dim, emb_dim, batch_first=True)
-        self.story_rnn = nn.LSTM(emb_dim, hid_dim, batch_first=True)
-        self.query_rnn = nn.LSTM(emb_dim, hid_dim, batch_first=True)
-        self.out = nn.Linear(hid_dim, out_dim)
+        self.sent_rnn = nn.LSTM(emb_dim, sent_hid_dim, batch_first=True)
+        self.story_rnn = nn.LSTM(sent_hid_dim+story_hid_dim, story_hid_dim, batch_first=True)
+        self.query_rnn = nn.LSTM(emb_dim, story_hid_dim, batch_first=True)
+        self.out = nn.Linear(story_hid_dim, out_dim)
         self.do = nn.Dropout(dropout)
 
-        self.emb_dim = emb_dim
-        self.hid_dim = hid_dim
+        self.sent_hid_dim = sent_hid_dim
 
     def forward(self, s, q):
 
@@ -31,7 +30,7 @@ class RNN(nn.Module):
         batch_size = emb_s.shape[0]
         story_len = emb_s.shape[1]
 
-        h_s = torch.zeros(batch_size, story_len, self.emb_dim).to(s.device)
+        h_s = torch.zeros(batch_size, story_len, self.sent_hid_dim).to(s.device)
 
         for i in range(story_len):
             _, (h, _) = self.sent_rnn(emb_s[:,i,:]) 
@@ -40,8 +39,8 @@ class RNN(nn.Module):
         #h_s = [bsz, story_len, emb_dim]
 
         #run rnns over story and query
-        o_s, (_, _) = self.story_rnn(h_s)
         _, (h_q, _) = self.query_rnn(emb_q)
+        o_s, (_, _) = self.story_rnn(torch.cat((h_s, h_q.squeeze(0).unsqueeze(1).expand(-1,h_s.shape[1] ,-1)),dim=2))
 
         o_s = self.do(o_s)
         h_q = self.do(h_q)

@@ -8,17 +8,18 @@ import torch.optim as optim
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class Args():
-    def __init__(self, epochs, batch_size, clip, emb_dim, hid_dim, out_dim, dropout, seed):
+    def __init__(self, epochs, batch_size, clip, emb_dim, sent_hid_dim, story_hid_dim, out_dim, dropout, seed):
         self.epochs = epochs
         self.batch_size = batch_size
         self.clip = clip
         self.emb_dim = emb_dim
-        self.hid_dim = hid_dim
+        self.sent_hid_dim = sent_hid_dim
+        self.story_hid_dim = story_hid_dim
         self.out_dim = out_dim
         self.dropout = dropout
         self.seed = seed
     
-args = Args(100, 256, 100, 64, 256, 10, 0.5, 1234)
+args = Args(epochs=500, batch_size=256, clip=100, emb_dim=128, sent_hid_dim=256, story_hid_dim=256, out_dim=10, dropout=0.0, seed=1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True
@@ -40,7 +41,7 @@ query_len = torch.tensor(q).shape[1]
 
 print(f'vocab size: {vocab_size}')
 
-model = models.RNN(vocab_size, args.emb_dim, args.hid_dim, args.out_dim, args.dropout)
+model = models.RNN(vocab_size, args.emb_dim, args.sent_hid_dim, args.story_hid_dim, args.out_dim, args.dropout)
 
 model = model.to(device)
 

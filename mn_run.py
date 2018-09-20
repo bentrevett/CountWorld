@@ -4,6 +4,7 @@ import random
 import models
 import torch.nn as nn
 import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -20,7 +21,7 @@ class Args():
         self.ls = ls
         self.seed = seed
     
-args = Args(epochs=100, batch_size=256, clip=10, emb_dim=50, out_dim=10, pos_enc=True, temp_enc=True, n_hops=3, ls=True, seed=1234)
+args = Args(epochs=500, batch_size=256, clip=10, emb_dim=50, out_dim=10, pos_enc=True, temp_enc=True, n_hops=3, ls=True, seed=1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True
@@ -50,6 +51,7 @@ print(f'{model}')
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
+scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.9)
 
 criterion = criterion.to(device)
 
@@ -139,5 +141,9 @@ for epoch in range(args.epochs):
         if prev_valid_loss < valid_loss:
             linear = False
         prev_valid_loss = valid_loss
+
+    if not linear:
+        #scheduler.step(valid_loss)
+        pass
 
     print(f'| epoch: {epoch+1:03} | train loss: {train_loss:.3f} | train acc: {train_acc:.2f} | valid loss: {valid_loss:.3f} | valid acc: {valid_acc:.2f}')

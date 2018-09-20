@@ -22,7 +22,7 @@ Each example is made up of `(S,Q,A)` triplets.
 
 An example triplet:
 
-``` python
+``` markdown
 s liam went to the town
 s liam picked up 2 eggs
 s eric went to the river
@@ -62,7 +62,7 @@ When the `supporting_answers` command line flag is used, `answers` are no longer
 
 Using the same example as previous, but now using `supporting_answers` we get:
 
-``` python
+``` markdown
 s liam went to the town
 s liam picked up 2 eggs
 s eric went to the river
@@ -79,7 +79,7 @@ a 0 2 2 2 2 2 3 3 3 3
 
 Whenever an example has multiple questions they are ordered so that all of the questions are stated first, followed by the corresponding answers in the same order.
 
-```python
+``` markdown
 s liam went to the town
 s liam picked up 2 eggs
 s eric went to the river

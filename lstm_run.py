@@ -19,7 +19,7 @@ class Args():
         self.dropout = dropout
         self.seed = seed
     
-args = Args(epochs=500, batch_size=256, clip=100, emb_dim=128, sent_hid_dim=256, story_hid_dim=256, out_dim=10, dropout=0.0, seed=1234)
+args = Args(epochs=500, batch_size=128, clip=100, emb_dim=128, sent_hid_dim=256, story_hid_dim=256, out_dim=10, dropout=0.0, seed=1234)
 
 #for deterministic results
 torch.backends.cudnn.deterministic = True
@@ -40,6 +40,9 @@ sent_len = torch.tensor(s).shape[1]
 query_len = torch.tensor(q).shape[1]
 
 print(f'vocab size: {vocab_size}')
+print(f'train examples: {len(train_data)}')
+print(f'valid examples: {len(valid_data)}')
+print(f'test examples: {len(test_data)}')
 
 model = models.RNN(vocab_size, args.emb_dim, args.sent_hid_dim, args.story_hid_dim, args.out_dim, args.dropout)
 

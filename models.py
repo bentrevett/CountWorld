@@ -40,40 +40,45 @@ class RNN(nn.Module):
 
         #run rnns over story and query
         _, (h_q, _) = self.query_rnn(emb_q)
-        o_s, (_, _) = self.story_rnn(torch.cat((h_s, h_q.squeeze(0).unsqueeze(1).expand(-1,h_s.shape[1] ,-1)),dim=2))
 
-        o_s = self.do(o_s)
-        h_q = self.do(h_q)
+        story_rnn_input = torch.cat((h_s, h_q.squeeze(0).unsqueeze(1).expand(-1,h_s.shape[1] ,-1)),dim=2)
+
+        o_s, (h_s, _) = self.story_rnn(story_rnn_input)
+
+        #o_s = self.do(o_s)
+        #h_q = self.do(h_q)
 
         #o_s = [bsz, story_len, hid_dim]
         #h_q = [1, bsz, hid_dim]
 
         #reshape query hidden state
-        h_q = h_q.squeeze(0)
-        h_q = h_q.unsqueeze(2)
+        #h_q = h_q.squeeze(0)
+        #h_q = h_q.unsqueeze(2)
 
         #h_q = [bsz, hid_dim, 1]
 
         #calculate energy
-        e = torch.bmm(o_s, h_q).squeeze(2)
+        #e = torch.bmm(o_s, h_q).squeeze(2)
 
         #e = [bsz, story_len]
 
         #calculate attention
-        a = F.softmax(e, dim=1)
+        #a = F.softmax(e, dim=1)
 
         #e = [bsz, story_len]
 
-        assert e.shape == a.shape
+        #assert e.shape == a.shape
 
         #apply attention
-        w = torch.sum(o_s * a.unsqueeze(2), dim=1)
+        #w = torch.sum(o_s * a.unsqueeze(2), dim=1)
 
         #w = [bsz, hid_dim]
 
-        o = self.out(w)
+        #o = self.out(w)
 
         #o = [bsz, out_dim]
+
+        o = self.out(h_s.squeeze(0))
 
         return o
 

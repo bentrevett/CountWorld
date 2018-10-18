@@ -3,17 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class RNN(nn.Module):
-    def __init__(self, vocab_size, emb_dim, sent_hid_dim, story_hid_dim, out_dim, dropout):
+    def __init__(self, vocab_size, emb_dim, hid_dim, out_dim, dropout):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, emb_dim)
-        self.sent_rnn = nn.LSTM(emb_dim, sent_hid_dim, batch_first=True)
-        self.story_rnn = nn.LSTM(sent_hid_dim+story_hid_dim, story_hid_dim, batch_first=True)
-        self.query_rnn = nn.LSTM(emb_dim, story_hid_dim, batch_first=True)
-        self.out = nn.Linear(story_hid_dim, out_dim)
+        self.story_rnn = nn.GRU(hid_dim*2, hid_dim)
+        self.query_rnn = nn.LSTM(emb_dim, hid_dim)
+        self.out = nn.Linear(hid_dim, out_dim)
         self.do = nn.Dropout(dropout)
-
-        self.sent_hid_dim = sent_hid_dim
 
     def forward(self, s, q):
 
@@ -26,6 +23,17 @@ class RNN(nn.Module):
 
         #emb_s = [bsz, story_len, sent_len, emb_dim]
         #emb_q = [bsz, query_len, emb_dim]
+
+        #sum embeddings across sentence
+        emb_s = emb_s.sum(dim=2)
+
+        #emb_s = [bsz, story_len, emb_dim]
+
+        #calculate latent query vector
+        emb_q = emb_q.permute(1, 0, 2)
+        _, (latent_q, _) = self.query_rnn(emb_q)
+
+        print(latent_q.shape)
 
         batch_size = emb_s.shape[0]
         story_len = emb_s.shape[1]
@@ -81,6 +89,104 @@ class RNN(nn.Module):
         o = self.out(h_s.squeeze(0))
 
         return o
+
+class RNNx(nn.Module):
+    def __init__(self, vocab_size, emb_dim, sent_hid_dim, query_hid_dim, story_hid_dim, out_dim, dropout):
+        super().__init__()
+
+        self.embedding = nn.Embedding(vocab_size, emb_dim)
+        self.query_rnn = nn.LSTM(emb_dim, query_hid_dim, batch_first=True)
+        self.sent_rnn = nn.LSTM(query_hid_dim+emb_dim, sent_hid_dim, batch_first=True)
+        self.story_rnn = nn.LSTM(sent_hid_dim+query_hid_dim, story_hid_dim, batch_first=True)
+        self.out = nn.Linear(query_hid_dim+story_hid_dim, out_dim)
+        self.do = nn.Dropout(dropout)
+
+        self.attn = nn.Linear(query_hid_dim+story_hid_dim, story_hid_dim)
+        self.v = nn.Parameter(torch.rand(story_hid_dim))
+
+        self.sent_hid_dim = sent_hid_dim
+
+    def forward(self, s, q):
+
+        #s = [bsz, story_len, sent_len]
+        #q = [bsz, query_len]
+
+        #calculate word embeddings
+        emb_s = self.do(self.embedding(s))
+        emb_q = self.do(self.embedding(q))
+
+        #emb_s = [bsz, story_len, sent_len, emb_dim]
+        #emb_q = [bsz, query_len, emb_dim]
+
+        batch_size = emb_q.shape[0]
+        query_len = emb_q.shape[1]
+        sent_len = emb_s.shape[2]
+        story_len = emb_s.shape[1]
+
+        #run rnn over query
+        _, (latent_query, _) = self.query_rnn(emb_q)
+
+        #latent_query = [1, bsz, query_hid_dim]
+
+        latent_query_repeat = latent_query.squeeze(0).unsqueeze(1).expand(-1, sent_len, -1)
+
+        #latent_query_repeat = [bsz, sent_len, query_hid_dim]
+
+        latent_sent = torch.zeros(batch_size, story_len, self.sent_hid_dim).to(s.device)
+
+        for i in range(story_len):
+            #emb_s[:,i,:,:] = [bsz, sent_len, emb_dim]
+            sent_rnn_input = torch.cat((emb_s[:,i,:,:], latent_query_repeat), dim=2)
+            #sent_rnn_input = [bsz, sent_len, emb_dim + query_hid_dim]
+            _, (h, _) = self.sent_rnn(sent_rnn_input) 
+            #h = [1, bsz, sent_hid_dim]
+            latent_sent[:,i,:] = h.squeeze(0)
+
+        #latent_sent = [bsz, story_len, emb_dim]
+        
+        latent_query_repeat = latent_query.squeeze(0).unsqueeze(1).expand(-1, latent_sent.shape[1], -1)
+
+        #latent_query_repeat = [bsz, story_len, query_hid_dim]
+
+        story_rnn_input = torch.cat((latent_sent, latent_query_repeat), dim=2)
+
+        #story_rnn_input = [bsz, story_len, sent_hid_dim + query_hid_dim]
+
+        o, (_, _) = self.story_rnn(story_rnn_input)
+
+        #o = [bsz, story_len, story_hid_dim]
+
+        energy = self.attn(torch.cat((latent_query_repeat, o), dim=2))
+
+        #energy = [bsz, story_len, story_hid_dim]
+
+        energy = energy.permute(0, 2, 1)
+
+        #energy = [bsz, story_hid_dim, story_len]
+
+        v = self.v.repeat(batch_size, 1).unsqueeze(1)
+
+        #v = [bsz, 1, story_hid_dim]
+
+        energy = torch.bmm(v, energy).squeeze(1)
+
+        #energy = [bsz, story_len]
+
+        attention = F.softmax(energy, dim=1).unsqueeze(1)
+
+        #attention = [bsz, 1, story_len]
+
+        #o = [bsz, sent_len, story_hid_dim]
+
+        context = torch.bmm(attention, o).squeeze(1)
+
+        #context = [bsz, story_hid_dim]
+
+        #latent_query = [1, bsz, query_hid_dim]
+
+        out = self.out(torch.cat((latent_query.squeeze(0), context), dim=1))
+
+        return out
 
 class MemoryNetwork(nn.Module):
     def __init__(self, vocab_size, emb_dim, out_dim, sent_len, story_len, pos_enc, temp_enc, n_hops):

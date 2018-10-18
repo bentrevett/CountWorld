@@ -15,6 +15,7 @@ parser.add_argument('--story_length_min', default=10, type=int, help='Minimum nu
 parser.add_argument('--story_length_max', default=10, type=int, help='Maximum number of sentences in a story')
 parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
 parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
+parser.add_argument('--which_questions', default='1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20', type=str, help='Which questions to use (see the README)')
 parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum value that an answer can be')
 parser.add_argument('--answer_values_max', default=9, type=int, help='Maximum value that an answer can be')
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
@@ -29,6 +30,7 @@ N_OBJECTS = (args.n_objects_min, args.n_objects_max) #(min, max) objects per sto
 N_LOCATIONS = (args.n_locations_min, args.n_locations_max) #(min, max) locations per story
 STORY_LENGTH = (args.story_length_min, args.story_length_max) #(min, max) story length
 N_QUESTIONS = (args.n_questions_min, args.n_questions_max) #(min, max) questions per story
+WHICH_QUESTIONS = {int(q) for q in args.which_questions.split(',')} #which questions to ask
 ANSWER_VALUES = (args.answer_values_min, args.answer_values_max) #(min, max) value of answers
 SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
 PICK_MAX = args.pick_max #maximum items to pick up at once
@@ -43,6 +45,7 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         N_LOCATIONS, 
                                         STORY_LENGTH, 
                                         N_QUESTIONS,
+                                        WHICH_QUESTIONS,
                                         ANSWER_VALUES,
                                         SUPPORTING_ANSWERS,
                                         PICK_MAX,
@@ -79,6 +82,7 @@ if args.balance:
                                         N_LOCATIONS, 
                                         STORY_LENGTH, 
                                         N_QUESTIONS,
+                                        WHICH_QUESTIONS,
                                         ANSWER_VALUES,
                                         SUPPORTING_ANSWERS,
                                         PICK_MAX,

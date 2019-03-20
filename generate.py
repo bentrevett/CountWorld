@@ -1,10 +1,11 @@
 import countworld
-import operator
 import argparse
-import random
+import os
 
 parser = argparse.ArgumentParser(description='Generate countworld examples', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--n_examples', default=100_000, type=int, help='Number of (S,Q,A) examples')
+parser.add_argument('--n_train_examples', default=10_000, type=int, help='Number of (S,Q,A) training examples')
+parser.add_argument('--n_valid_examples', default=10_000, type=int, help='Number of (S,Q,A) validation examples')
+parser.add_argument('--n_test_examples', default=10_000, type=int, help='Number of (S,Q,A) testing examples')
 parser.add_argument('--n_entities_min', default=2, type=int, help='Minimum number of entities per story')
 parser.add_argument('--n_entities_max', default=2, type=int, help='Maximum number of entities per story')
 parser.add_argument('--n_objects_min', default=2, type=int, help='Minimum number of objects per story')
@@ -16,15 +17,17 @@ parser.add_argument('--story_length_max', default=10, type=int, help='Maximum nu
 parser.add_argument('--n_questions_min', default=1, type=int, help='Minimum number of questions for each story')
 parser.add_argument('--n_questions_max', default=1, type=int, help='Maximum number of questions for each story')
 parser.add_argument('--which_questions', default='1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20', type=str, help='Which questions to use (see the README)')
-parser.add_argument('--answer_values_min', default=0, type=int, help='Minimum value that an answer can be')
-parser.add_argument('--answer_values_max', default=9, type=int, help='Maximum value that an answer can be')
+parser.add_argument('--answer_values_min', default=-float('inf'), type=int, help='Minimum value that an answer can be')
+parser.add_argument('--answer_values_max', default=float('inf'), type=int, help='Maximum value that an answer can be')
 parser.add_argument('--supporting_answers', action='store_true', help='Use this flag to get answer for every sentence in a story')
 parser.add_argument('--pick_max', default=3, type=int, help='Maximum number of objects an entity picks up during a pick action')
 parser.add_argument('--seed', default=1234, type=int, help='Random seed for generation')
-parser.add_argument('--balance', action='store_true', help='Makes sure we have an equal amount of all answers')
 args = parser.parse_args()
 
-N_EXAMPLES = args.n_examples #examples
+N_TRAIN_EXAMPLES = args.n_train_examples #examples
+N_VALID_EXAMPLES = args.n_valid_examples #examples
+N_TEST_EXAMPLES = args.n_test_examples #examples
+N_EXAMPLES = N_TRAIN_EXAMPLES+N_VALID_EXAMPLES+N_TEST_EXAMPLES # examples
 N_ENTITIES = (args.n_entities_min, args.n_entities_max) #(min, max) entities per story
 N_OBJECTS = (args.n_objects_min, args.n_objects_max) #(min, max) objects per story
 N_LOCATIONS = (args.n_locations_min, args.n_locations_max) #(min, max) locations per story
@@ -35,9 +38,6 @@ ANSWER_VALUES = (args.answer_values_min, args.answer_values_max) #(min, max) val
 SUPPORTING_ANSWERS = args.supporting_answers #supporting answers
 PICK_MAX = args.pick_max #maximum items to pick up at once
 RANDOM_SEED = args.seed #random seed
-BALANCE = args.balance #true if balancing
-
-random.seed(RANDOM_SEED)
 
 examples = countworld.generate_examples(N_EXAMPLES, 
                                         N_ENTITIES, 
@@ -49,94 +49,17 @@ examples = countworld.generate_examples(N_EXAMPLES,
                                         ANSWER_VALUES,
                                         SUPPORTING_ANSWERS,
                                         PICK_MAX,
-                                        BALANCE,
                                         RANDOM_SEED) 
-
-if args.balance:
-    
-    assert N_QUESTIONS[0] == N_QUESTIONS[1] == 1, 'Balancing works with one question only'
-    
-    answer_dist = dict()
-
-    for ex in examples:
-        questions = ex['questions']
-        for (q, a) in questions:
-            if SUPPORTING_ANSWERS:
-                a = a[-1]
-            if a in answer_dist:
-                answer_dist[a] += 1
-            else: 
-                answer_dist[a] = 1
-
-    lowest_a = min(answer_dist.items(), key=operator.itemgetter(1))[1]
-
-    print(f'Balancing... min: {lowest_a}, req: {N_EXAMPLES/len(answer_dist)}')
-
-    while lowest_a * len(answer_dist) < N_EXAMPLES:
-
-        RANDOM_SEED += 1
-
-        examples += countworld.generate_examples(N_EXAMPLES, 
-                                        N_ENTITIES, 
-                                        N_OBJECTS, 
-                                        N_LOCATIONS, 
-                                        STORY_LENGTH, 
-                                        N_QUESTIONS,
-                                        WHICH_QUESTIONS,
-                                        ANSWER_VALUES,
-                                        SUPPORTING_ANSWERS,
-                                        PICK_MAX,
-                                        RANDOM_SEED)
-
-        answer_dist = dict()
-        
-        for ex in examples:
-            questions = ex['questions']
-            for (q, a) in questions:
-                if SUPPORTING_ANSWERS:
-                    a = a[-1]
-                if a in answer_dist:
-                    answer_dist[a] += 1
-                else: 
-                    answer_dist[a] = 1
-
-        lowest_a = min(answer_dist.items(), key=operator.itemgetter(1))[1]
-
-        print(f'Balancing... min: {lowest_a}, req: {N_EXAMPLES/len(answer_dist)}')
-
-    random.shuffle(examples)
-
-    required_examples = N_EXAMPLES / len(answer_dist) 
-
-    temp_examples = []
-
-    answer_count = dict()
-
-    for ex in examples:
-        questions = ex['questions']
-        for (_, a) in questions:
-            if SUPPORTING_ANSWERS:
-                a = a[-1]
-            if a in answer_count and answer_count[a] < required_examples:
-                temp_examples.append(ex)
-                answer_count[a] += 1
-            if a not in answer_count:
-                temp_examples.append(ex)
-                answer_count[a] = 1
-
-    examples = temp_examples
-
-    random.shuffle(examples)
-
-N_TRAIN_EXAMPLES = int(N_EXAMPLES*0.8)
-N_VALID_EXAMPLES = int(N_EXAMPLES*0.1)
-N_TEST_EXAMPLES = int(N_EXAMPLES*0.1)
 
 train_examples = examples[:N_TRAIN_EXAMPLES]
 valid_examples = examples[N_TRAIN_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES]
-test_examples = examples[N_TRAIN_EXAMPLES+N_VALID_EXAMPLES:N_TRAIN_EXAMPLES+N_VALID_EXAMPLES+N_TEST_EXAMPLES]
+test_examples = examples[N_TRAIN_EXAMPLES+N_VALID_EXAMPLES:]
+
+
 
 def examples_to_file(name, examples):
+
+    os.makedirs('data', exist_ok=True)
 
     with open(f'data/{name}.txt', 'w+') as f:
         for ex in examples:

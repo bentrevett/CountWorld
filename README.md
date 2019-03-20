@@ -130,22 +130,3 @@ There are currently 20 different types of questions that can be asked about a st
 - how many times was the \<location> visited in total ?
 
 Most of these questions can be asked about each entity/location/object or a combination of. For example the first question can be asked about every object and entity combination.
-
-## Utils
-
-The `utils.py` file can be used to read the data via:
-
-```python
-train_data, valid_data, test_data, word2idx, idx2word = utils.load_data('data')
-```
-
-It will automatically:
-
-- calculate the maximum lengths of the story, sentences within the story and the query, and find out if you are using supporting answers
-- pad all stories and queries, so that each story, sentence and query is the same length, with a `<pad>` token
-- pad all answers with `-1`
-- index all words
-
-`train_data` is a list of tuples, where each tuple is an `(S,Q,A)` triplet, same for `valid_data` and `test_data`
-
-`word2idx` is a dictionary where the keys are each word in the vocabulary and the items are the corresponding index of each word, `idx2word` is the reverse of this
